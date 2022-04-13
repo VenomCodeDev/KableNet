@@ -13,6 +13,11 @@ namespace KableNet.Math
             this.value = value;
         }
 
+        public override int GetHashCode( ) 
+        {
+            return base.GetHashCode( );
+        }
+
         public static bool operator ==( Identifier primary, Identifier secondary )
         {
             if ( primary is null && !( secondary is null ) )
@@ -54,7 +59,7 @@ namespace KableNet.Math
             }
         }
 
-        public override bool Equals( object? obj )
+        public override bool Equals( object obj )
         {
             if ( obj is Identifier )
             {

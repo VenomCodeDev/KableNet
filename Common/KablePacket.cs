@@ -161,7 +161,7 @@ namespace KableNet.Common
 
             return new Identifier( retPath, retValue );
         }
-        public NetId? ReadNetId( )
+        public NetId ReadNetId( )
         {
             NetId ret;
             if ( NetId.TryParse( ReadString( ), out ret ) )

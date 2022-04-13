@@ -67,7 +67,7 @@ namespace KableNet.Math
             }
         }
 
-        public override bool Equals( object? obj )
+        public override bool Equals( object obj )
         {
             if ( obj is NetId )
             {
