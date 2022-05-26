@@ -8,26 +8,10 @@ namespace KableNet.Common
 {
     /// <summary>
     ///     Represents a Kable-Networking connection. Both Client AND Server side will have this sort
-    ///     of instance for communicaiton.
+    ///     of instance for communication.
     /// </summary>
     public class KableConnection
     {
-
-        public delegate void KableConnected( KableConnection source );
-
-        public delegate void KableConnectErrored( SocketException exception, KableConnection source );
-
-        public delegate void KableConnectionErrored( Exception ex, KableConnection source );
-
-        public delegate void KablePacketReady( KablePacket packet, KableConnection source );
-
-        private byte[ ] _tcpBuffer;
-        private List<byte> _tcpPacketBuffer = new List<byte>( );
-        private PendingPacket _tcpPendingPacket;
-
-        private byte[ ] _udpBuffer;
-        private List<byte> _udpPacketBuffer = new List<byte>( );
-        private PendingPacket _udpPendingPacket;
         public int maxProcessIterations = 5;
 
         /// <summary>
@@ -75,12 +59,6 @@ namespace KableNet.Common
             BeginRecieveUDP( );
         }
 
-        public bool connected { get; private set; }
-        public Socket tcpSocket { get; }
-        public Socket udpSocket { get; }
-        public IPAddress address { get; }
-        public int port { get; }
-
         public bool backgroundProcessing { get; private set; }
 
         /// <summary>
@@ -90,6 +68,8 @@ namespace KableNet.Common
         /// </summary>
         public void Connect( )
         {
+            if ( closed )
+                return;
             try
             {
                 tcpSocket.BeginConnect( new IPEndPoint( address, port ), ConnectCallback, null );
@@ -120,6 +100,8 @@ namespace KableNet.Common
         /// </summary>
         private void BeginRecieveTCP( )
         {
+            if ( closed )
+                return;
             try
             {
                 if ( _tcpPendingPacket is null )
@@ -149,6 +131,8 @@ namespace KableNet.Common
         /// </summary>
         private void BeginRecieveUDP( )
         {
+            if ( closed )
+                return;
             try
             {
                 if ( _udpPendingPacket is null )
@@ -179,6 +163,8 @@ namespace KableNet.Common
         /// <param name="AR"></param>
         private void ConnectCallback( IAsyncResult AR )
         {
+            if ( closed )
+                return;
             try
             {
                 tcpSocket.EndConnect( AR );
@@ -205,15 +191,21 @@ namespace KableNet.Common
 
         public void SendPacketTCP( KablePacket packet )
         {
+            if ( closed )
+                return;
             SendPacketTCPAsync( packet ).Wait( );
         }
         public void SendPacketTCP( List<byte> packetBuffer )
         {
+            if ( closed )
+                return;
             SendPacketTCPAsync( packetBuffer ).Wait( );
         }
 
         public async Task SendPacketTCPAsync( KablePacket packet )
         {
+            if ( closed )
+                return;
             await SendPacketTCPAsync( packet.GetRaw( ) );
         }
 
@@ -224,6 +216,8 @@ namespace KableNet.Common
         /// <returns></returns>
         public async Task SendPacketTCPAsync( List<byte> packetBuffer )
         {
+            if ( closed )
+                return;
             try
             {
                 if ( tcpSocket != null && connected )
@@ -262,15 +256,21 @@ namespace KableNet.Common
 
         public void SendPacketUDP( KablePacket packet )
         {
+            if ( closed )
+                return;
             SendPacketUDPAsync( packet ).Wait( );
         }
         public void SendPacketUDP( List<byte> packetBuffer )
         {
+            if ( closed )
+                return;
             SendPacketUDPAsync( packetBuffer ).Wait( );
         }
 
         public async Task SendPacketUDPAsync( KablePacket packet )
         {
+            if ( closed )
+                return;
             await SendPacketUDPAsync( packet.GetRaw( ) );
         }
 
@@ -281,6 +281,8 @@ namespace KableNet.Common
         /// <returns></returns>
         public async Task SendPacketUDPAsync( List<byte> packetBuffer )
         {
+            if ( closed )
+                return;
             try
             {
                 if ( udpSocket != null && connected )
@@ -322,6 +324,8 @@ namespace KableNet.Common
         /// <param name="ar"></param>
         private void OnTCPRecvCallback( IAsyncResult ar )
         {
+            if ( closed )
+                return;
             try
             {
                 if ( tcpSocket != null )
@@ -364,7 +368,7 @@ namespace KableNet.Common
                 connected = false;
             }
 
-            if ( connected )
+            if ( connected && !closed )
             {
                 if ( backgroundProcessing )
                 {
@@ -382,6 +386,8 @@ namespace KableNet.Common
         /// <exception cref="NotImplementedException"></exception>
         private void OnUDPRecvCallback( IAsyncResult ar )
         {
+            if ( closed )
+                return;
             try
             {
                 if ( udpSocket != null )
@@ -424,7 +430,7 @@ namespace KableNet.Common
                 connected = false;
             }
 
-            if ( connected )
+            if ( connected && !closed )
             {
                 if ( backgroundProcessing )
                 {
@@ -437,7 +443,7 @@ namespace KableNet.Common
 
         private ProcessedResultType ProcessBufferTCP( )
         {
-            if ( _tcpPacketBuffer.Count <= 0 )
+            if ( _tcpPacketBuffer.Count <= 0 || closed )
                 return ProcessedResultType.EXIT;
 
             if ( _tcpPendingPacket is null )
@@ -509,7 +515,7 @@ namespace KableNet.Common
 
         private ProcessedResultType ProcessBufferUDP( )
         {
-            if ( _udpPacketBuffer.Count <= 0 )
+            if ( _udpPacketBuffer.Count <= 0 || closed )
                 return ProcessedResultType.EXIT;
 
             if ( _udpPendingPacket is null )
@@ -588,6 +594,8 @@ namespace KableNet.Common
         /// </summary>
         public void ProcessBuffer( )
         {
+            if ( closed )
+                return;
             int againCount;
 
             // Dont rerun these loops more than maxProcessIterations times.
@@ -596,6 +604,8 @@ namespace KableNet.Common
             // TCP
             while ( againCount < maxProcessIterations )
             {
+                if ( closed )
+                    return;
                 againCount++;
 
                 ProcessedResultType result = ProcessBufferTCP( );
@@ -607,6 +617,8 @@ namespace KableNet.Common
             // UDP
             while ( againCount < maxProcessIterations )
             {
+                if ( closed )
+                    return;
                 againCount++;
 
                 ProcessedResultType result = ProcessBufferUDP( );
@@ -614,10 +626,49 @@ namespace KableNet.Common
                     break;
             }
         }
-        public event KableConnectErrored ConnectErroredEvent;
-        public event KableConnectionErrored ConnectionErroredEvent;
-        public event KablePacketReady PacketReadyEvent;
+
+        public void Close( )
+        {
+            
+            closed = true;
+            try
+            {
+                tcpSocket.Close( );
+            }
+            catch { }
+
+            try
+            {
+                udpSocket.Close( );
+            }
+            catch { }
+        }
+
+        public bool connected { get; private set; }
+        public bool closed { get; private set; } = false;
+        public Socket tcpSocket { get; }
+        public Socket udpSocket { get; }
+        public IPAddress address { get; }
+        public int port { get; }
+
+        private byte[ ] _tcpBuffer;
+        private List<byte> _tcpPacketBuffer = new List<byte>( );
+        private PendingPacket _tcpPendingPacket;
+
+        private byte[ ] _udpBuffer;
+        private List<byte> _udpPacketBuffer = new List<byte>( );
+        private PendingPacket _udpPendingPacket;
+        
+        public delegate void KableConnected( KableConnection source );
         public event KableConnected ConnectedEvent;
+        public delegate void KableConnectErrored( SocketException exception, KableConnection source );
+        public event KableConnectErrored ConnectErroredEvent;
+
+        public delegate void KableConnectionErrored( Exception ex, KableConnection source );
+        public event KableConnectionErrored ConnectionErroredEvent;
+
+        public delegate void KablePacketReady( KablePacket packet, KableConnection source );
+        public event KablePacketReady PacketReadyEvent;
 
         /// <summary>
         ///     Used for simple data storage about the current "pending packet" while

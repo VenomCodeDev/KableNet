@@ -78,6 +78,11 @@ namespace KableNet.Math
             return false;
         }
 
+        public override int GetHashCode( )
+        {
+            return this.rawNetId.GetHashCode( );
+        }
+
         public static NetId Generate( )
         {
             return new NetId( GenerateIdent( KableHelper.rand ) );
