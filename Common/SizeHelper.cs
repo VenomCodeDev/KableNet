@@ -1,9 +1,9 @@
 ﻿namespace KableNet.Common
 {
     /// <summary>
-    /// This class stores common byte sizes that will be used with KableNet.
-    /// I am 100% sure theres methods directly in C# that have these values,
-    /// but for now ill hard code them. Also stores the Buffer size KableNet uses.
+    ///     This class stores common byte sizes that will be used with KableNet.
+    ///     I am 100% sure theres methods directly in C# that have these values,
+    ///     but for now ill hard code them. Also stores the Buffer size KableNet uses.
     /// </summary>
     public class SizeHelper
     {

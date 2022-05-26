@@ -8,11 +8,14 @@ namespace KableNet.Common
 {
 
     /// <summary>
-    /// The packet data class for KableNet
-    /// Used for both reading AND writing a packet
+    ///     The packet data class for KableNet
+    ///     Used for both reading AND writing a packet
     /// </summary>
     public class KablePacket
     {
+        readonly private List<byte> rawBytes;
+
+        private int readPosition;
         public KablePacket( )
         {
             rawBytes = new List<byte>( );
@@ -20,6 +23,14 @@ namespace KableNet.Common
         public KablePacket( List<byte> bytes )
         {
             rawBytes = bytes;
+        }
+
+        public int Count
+        {
+            get
+            {
+                return rawBytes.Count;
+            }
         }
 
         public void ResetReadPosition( )
@@ -171,16 +182,5 @@ namespace KableNet.Common
 
             return null;
         }
-
-        public int Count
-        {
-            get
-            {
-                return rawBytes.Count;
-            }
-        }
-
-        int readPosition = 0;
-        List<byte> rawBytes;
     }
 }

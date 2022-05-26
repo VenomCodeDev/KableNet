@@ -7,13 +7,19 @@ using KableNet.Common;
 namespace KableNet.Server
 {
     /// <summary>
-    /// Server Listener for KableNet
+    ///     Server Listener for KableNet
     /// </summary>
     public class KableServer
     {
+
+        public delegate void NewConnection( KableConnection connection );
+
+        public delegate void NewConnectionSocketError( string errorMessage );
+
+        readonly private Socket _socket;
         /// <summary>
-        /// Initializes a KableNet Server on the specified port bound to "0.0.0.0"
-        /// and starts listening.
+        ///     Initializes a KableNet Server on the specified port bound to "0.0.0.0"
+        ///     and starts listening.
         /// </summary>
         /// <param name="port"></param>
         public KableServer( int port )
@@ -48,25 +54,19 @@ namespace KableNet.Server
             }
             catch ( SocketException ex )
             {
-                NewConnectionErroredEvent?.Invoke( $"[SocketException]New Connection Error'd!\n{ex.ToString( )}" );
+                NewConnectionErroredEvent?.Invoke( $"[SocketException]New Connection Error'd!\n{ex}" );
             }
             catch ( Exception ex )
             {
-                NewConnectionErroredEvent?.Invoke( $"[Exception]New Connection Error'd!\n{ex.ToString( )}" );
+                NewConnectionErroredEvent?.Invoke( $"[Exception]New Connection Error'd!\n{ex}" );
             }
         }
 
         private void StartTCPAccept( )
         {
-            _socket.BeginAccept( new AsyncCallback( OnTCPAcceptCallback ), _socket );
+            _socket.BeginAccept( OnTCPAcceptCallback, _socket );
         }
-
-        public delegate void NewConnection( KableConnection connection );
         public event NewConnection NewConnectionEvent;
-
-        public delegate void NewConnectionSocketError( string errorMessage );
         public event NewConnectionSocketError NewConnectionErroredEvent;
-
-        private Socket _socket;
     }
 }

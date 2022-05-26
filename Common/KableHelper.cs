@@ -4,6 +4,6 @@ namespace KableNet.Common
 {
     public class KableHelper
     {
-        internal static Random rand { get; private set; } = new Random( );
+        internal static Random rand { get; } = new Random( );
     }
 }

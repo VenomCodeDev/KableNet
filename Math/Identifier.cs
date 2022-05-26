@@ -13,7 +13,10 @@ namespace KableNet.Math
             this.value = value;
         }
 
-        public override int GetHashCode( ) 
+        public string path { get; }
+        public string value { get; }
+
+        public override int GetHashCode( )
         {
             return base.GetHashCode( );
         }
@@ -24,19 +27,16 @@ namespace KableNet.Math
             {
                 return false;
             }
-            else if ( secondary is null && !( primary is null ) )
+            if ( secondary is null && !( primary is null ) )
             {
                 return false;
             }
-            else if ( primary is null )
+            if ( primary is null )
             {
                 // Both are null?
                 return true;
             }
-            else
-            {
-                return primary.Equals( secondary );
-            }
+            return primary.Equals( secondary );
         }
         public static bool operator !=( Identifier primary, Identifier secondary )
         {
@@ -44,19 +44,16 @@ namespace KableNet.Math
             {
                 return true;
             }
-            else if ( secondary is null && !( primary is null ) )
+            if ( secondary is null && !( primary is null ) )
             {
                 return true;
             }
-            else if ( primary is null )
+            if ( primary is null )
             {
                 // Both are null?
                 return false;
             }
-            else
-            {
-                return !primary.Equals( secondary );
-            }
+            return !primary.Equals( secondary );
         }
 
         public override bool Equals( object obj )
@@ -76,9 +73,6 @@ namespace KableNet.Math
         {
             return $"{path}:{value}";
         }
-
-        public string path { get; private set; }
-        public string value { get; private set; }
 
         public List<byte> ToBytes( )
         {

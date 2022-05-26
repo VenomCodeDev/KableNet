@@ -1,16 +1,21 @@
 # KableNet
- A C# Multiplayer VideoGame Networking Library
+
+A C# Multiplayer VideoGame Networking Library
 
 ---
- ## Quick Start
- To start using KableNet, first import it as a reference in your project.
- The next steps depend on if you're doing the Server or Client(because they are handled seperately).
 
- **NOTICE:** Subscribe to events *BEFORE* starting the connection!
+## Quick Start
+
+To start using KableNet, first import it as a reference in your project.
+The next steps depend on if you're doing the Server or Client(because they are handled seperately).
+
+**NOTICE:** Subscribe to events *BEFORE* starting the connection!
 
 #### ServerSide
+
 A KableNet server is rather simple to setup.
 An example snippet of a KableNet server is below.
+
 ```cs
 int port = 6886;
 KableServer server = new KableServer( port );
@@ -24,11 +29,14 @@ server.NewConnectionErroredEvent += OnNewConnectionError;
 server.StartListening();
 ```
 
-The ``NewConnectionEvent`` event will provide a KableConnection that represents the connection to the client. You may then subscribe to the clients ``PacketReadyEvent`` to recieve ``KablePacket``'s from the client.
+The ``NewConnectionEvent`` event will provide a KableConnection that represents the connection to the client. You may
+then subscribe to the clients ``PacketReadyEvent`` to recieve ``KablePacket``'s from the client.
 
 #### ClientSide
+
 ClientSide is equally simple.
 An example snippet of a KableNet client is below.
+
 ```cs
 string address = "127.0.0.1";
 int port = 6886;
@@ -50,14 +58,19 @@ connection.Connect();
 ```
 
 #### KablePacket
-A ``KablePacket`` is the class that is used to wrap data being sent to and from ``KableConnection`` classes. An example of its usage to send a TCP message through a ``KableConnection`` is given below.
+
+A ``KablePacket`` is the class that is used to wrap data being sent to and from ``KableConnection`` classes. An example
+of its usage to send a TCP message through a ``KableConnection`` is given below.
+
 ```cs
 KablePacket packet = new KablePacket();
 packet.Write("Hello World!");
 // connection is a instance of KableConnection
 await connection.SendPacketTCPAsync(packet);
 ```
+
 And to read, you'd do the following inside of your method that handles ``PacketReadyEvent``
+
 ```cs
 private void OnPacketReady(KablePacket packet)
 {
@@ -65,24 +78,40 @@ private void OnPacketReady(KablePacket packet)
     Console.WriteLine( $"Recieved Message '{ message }'" );
 }
 ```
-When done properly, this will send the string ``"Hello World"`` through the KableConnection. You can Write and Read many different data types.
+
+When done properly, this will send the string ``"Hello World"`` through the KableConnection. You can Write and Read many
+different data types.
 
 ---
 
 ### Packet Processing
-In order for the ``PacketReadyEvent`` to be called, you must call ``ProcessBuffer`` routinely on all of your ``KableConnection`` instances. This will process the current network stream into ``KablePacket``'s on the current thread. 
 
-An alternative is to call ``EnableBackgroundProcessing`` on your ``KableConnection`` instances. This will handle the processing on a background thread.
+In order for the ``PacketReadyEvent`` to be called, you must call ``ProcessBuffer`` routinely on all of
+your ``KableConnection`` instances. This will process the current network stream into ``KablePacket``'s on the current
+thread.
 
-**WARNING:** Your project **MUST** support multi-threading to use ``EnableBackgroundProcessing``. This is especially true with the Unity3D Game Engine, where you should instead call ``ProcessBuffer`` inside of a game script in the ``Update`` method.
+An alternative is to call ``EnableBackgroundProcessing`` on your ``KableConnection`` instances. This will handle the
+processing on a background thread.
+
+**WARNING:** Your project **MUST** support multi-threading to use ``EnableBackgroundProcessing``. This is especially
+true with the Unity3D Game Engine, where you should instead call ``ProcessBuffer`` inside of a game script in
+the ``Update`` method.
 
 ---
+
 ## Other Included Stuff
+
 ##### Identifier
+
 An identifier is similar to MC's implementation of namespace:value style identifiaction of different objects.
 
 ##### Vec3f
-Vec3f is a barebones class consisting of three floats. Literally meaning Vector-3-Float. This can be sent through included KablePacket methods allowing for slightly quicker implementations.
+
+Vec3f is a barebones class consisting of three floats. Literally meaning Vector-3-Float. This can be sent through
+included KablePacket methods allowing for slightly quicker implementations.
 
 ##### NetId
-NetId is a barebones implimentation of identifying different objects between clients. It is literally just a random string generator that is wrapped in a fancy class. This is inherently slower than needed(Because of strings) so I plan to rework this class later on while mainting backwards compatability.
+
+NetId is a barebones implimentation of identifying different objects between clients. It is literally just a random
+string generator that is wrapped in a fancy class. This is inherently slower than needed(Because of strings) so I plan
+to rework this class later on while mainting backwards compatability.

@@ -9,21 +9,24 @@ namespace KableNet.Math
 
     public class NetId
     {
+
+        private const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890$@#";
+        private const int validLength = 26;
+
+        readonly private string rawNetId = "__NULL__";
         private NetId( string networkIdentifier )
         {
             rawNetId = networkIdentifier;
         }
 
-        private string rawNetId = "__NULL__";
+        public static NetId Empty
+        {
+            get { return new NetId( "__NULL__" ); }
+        }
 
         public string GetRaw( )
         {
             return rawNetId;
-        }
-
-        public static NetId Empty
-        {
-            get { return new NetId( "__NULL__" ); }
         }
 
         public static bool operator ==( NetId primary, NetId secondary )
@@ -32,19 +35,16 @@ namespace KableNet.Math
             {
                 return false;
             }
-            else if ( secondary is null && !( primary is null ) )
+            if ( secondary is null && !( primary is null ) )
             {
                 return false;
             }
-            else if ( primary is null )
+            if ( primary is null )
             {
                 // Both are null?
                 return true;
             }
-            else
-            {
-                return primary.Equals( secondary );
-            }
+            return primary.Equals( secondary );
         }
         public static bool operator !=( NetId primary, NetId secondary )
         {
@@ -52,19 +52,16 @@ namespace KableNet.Math
             {
                 return true;
             }
-            else if ( secondary is null && !( primary is null ) )
+            if ( secondary is null && !( primary is null ) )
             {
                 return true;
             }
-            else if ( primary is null )
+            if ( primary is null )
             {
                 // Both are null?
                 return false;
             }
-            else
-            {
-                return !primary.Equals( secondary );
-            }
+            return !primary.Equals( secondary );
         }
 
         public override bool Equals( object obj )
@@ -123,8 +120,5 @@ namespace KableNet.Math
 
             return strBuilder.ToString( );
         }
-
-        const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890$@#";
-        const int validLength = 26;
     }
 }
