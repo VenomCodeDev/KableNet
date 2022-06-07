@@ -182,27 +182,27 @@ namespace KableNet.Common
                 connected = false;
             }
 
-            if ( connected )
+            if ( connected && !closed )
             {
                 BeginRecieveTCP( );
                 BeginRecieveUDP( );
             }
         }
 
-        public void SendPacketTCP( KablePacket packet )
+        public void SendPacketTc( KablePacket packet )
         {
             if ( closed )
                 return;
-            SendPacketTCPAsync( packet ).Wait( );
+            SendPacketTcpAsync( packet ).Wait( );
         }
-        public void SendPacketTCP( List<byte> packetBuffer )
+        public void SendPacketTcp( List<byte> packetBuffer )
         {
             if ( closed )
                 return;
             SendPacketTCPAsync( packetBuffer ).Wait( );
         }
 
-        public async Task SendPacketTCPAsync( KablePacket packet )
+        public async Task SendPacketTcpAsync( KablePacket packet )
         {
             if ( closed )
                 return;
@@ -441,7 +441,7 @@ namespace KableNet.Common
             }
         }
 
-        private ProcessedResultType ProcessBufferTCP( )
+        private ProcessedResultType ProcessBufferTcp( )
         {
             if ( _tcpPacketBuffer.Count <= 0 || closed )
                 return ProcessedResultType.EXIT;
@@ -513,7 +513,7 @@ namespace KableNet.Common
             return ProcessedResultType.CONTINUE;
         }
 
-        private ProcessedResultType ProcessBufferUDP( )
+        private ProcessedResultType ProcessBufferUdp( )
         {
             if ( _udpPacketBuffer.Count <= 0 || closed )
                 return ProcessedResultType.EXIT;
@@ -608,7 +608,7 @@ namespace KableNet.Common
                     return;
                 againCount++;
 
-                ProcessedResultType result = ProcessBufferTCP( );
+                ProcessedResultType result = ProcessBufferTcp( );
                 if ( result is ProcessedResultType.EXIT )
                     break;
             }
@@ -621,7 +621,7 @@ namespace KableNet.Common
                     return;
                 againCount++;
 
-                ProcessedResultType result = ProcessBufferUDP( );
+                ProcessedResultType result = ProcessBufferUdp( );
                 if ( result is ProcessedResultType.EXIT )
                     break;
             }
