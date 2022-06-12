@@ -22,44 +22,44 @@ namespace KableNet.Common
         /// <param name="port">Port to connect to</param>
         public KableConnection( IPAddress address, int port )
         {
-            this.address = address;
-            this.port = port;
+            this.Address = address;
+            this.Port = port;
 
-            tcpSocket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
-            tcpSocket.NoDelay = true;
+            TcpSocket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
+            TcpSocket.NoDelay = true;
             _tcpBuffer = new byte[ SizeHelper.Normal ];
 
-            udpSocket = new Socket( AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp );
-            udpSocket.SetSocketOption( SocketOptionLevel.IP, SocketOptionName.ReuseAddress, true );
-            udpSocket.Bind( new IPEndPoint( IPAddress.Any, port + 1 ) );
+            UdpSocket = new Socket( AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp );
+            UdpSocket.SetSocketOption( SocketOptionLevel.IP, SocketOptionName.ReuseAddress, true );
+            UdpSocket.Bind( new IPEndPoint( IPAddress.Any, port + 1 ) );
             _udpBuffer = new byte[ SizeHelper.Normal ];
 
-            connected = false;
+            Connected = false;
         }
         /// <summary>
         ///     ServerSide way to get a KableConnection instance.
         /// </summary>
-        /// <param name="activeTCPSocket">The raw TCP Socket.</param>
-        internal KableConnection( Socket activeTCPSocket )
+        /// <param name="activeTcpSocket">The raw Tcp Socket.</param>
+        internal KableConnection( Socket activeTcpSocket )
         {
-            tcpSocket = activeTCPSocket;
+            TcpSocket = activeTcpSocket;
 
-            connected = true;
+            Connected = true;
 
-            address = null;
-            connected = true;
+            Address = null;
+            Connected = true;
             _tcpBuffer = new byte[ SizeHelper.Normal ];
 
-            udpSocket = new Socket( AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp );
-            udpSocket.SetSocketOption( SocketOptionLevel.IP, SocketOptionName.ReuseAddress, true );
-            udpSocket.Bind( new IPEndPoint( IPAddress.Any, port + 1 ) );
+            UdpSocket = new Socket( AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp );
+            UdpSocket.SetSocketOption( SocketOptionLevel.IP, SocketOptionName.ReuseAddress, true );
+            UdpSocket.Bind( new IPEndPoint( IPAddress.Any, Port + 1 ) );
             _udpBuffer = new byte[ SizeHelper.Normal ];
 
-            BeginRecieveTCP( );
-            BeginRecieveUDP( );
+            BeginRecieveTcp( );
+            BeginRecieveUdp( );
         }
 
-        public bool backgroundProcessing { get; private set; }
+        public bool BackgroundProcessing { get; private set; }
 
         /// <summary>
         ///     a
@@ -68,21 +68,21 @@ namespace KableNet.Common
         /// </summary>
         public void Connect( )
         {
-            if ( closed )
+            if ( Closed )
                 return;
             try
             {
-                tcpSocket.BeginConnect( new IPEndPoint( address, port ), ConnectCallback, null );
+                TcpSocket.BeginConnect( new IPEndPoint( Address, Port ), ConnectCallback, null );
             }
             catch ( SocketException ex )
             {
                 ConnectErroredEvent?.Invoke( ex, this );
-                connected = false;
+                Connected = false;
             }
             catch ( Exception ex )
             {
                 ConnectionErroredEvent?.Invoke( ex, this );
-                connected = false;
+                Connected = false;
             }
         }
 
@@ -92,15 +92,15 @@ namespace KableNet.Common
         /// </summary>
         public void EnableBackgroundProcessing( )
         {
-            backgroundProcessing = true;
+            BackgroundProcessing = true;
         }
 
         /// <summary>
-        ///     Starts the Async Callback for reading TCP data from the socket
+        ///     Starts the Async Callback for reading Tcp data from the socket
         /// </summary>
-        private void BeginRecieveTCP( )
+        private void BeginRecieveTcp( )
         {
-            if ( closed )
+            if ( Closed )
                 return;
             try
             {
@@ -110,28 +110,28 @@ namespace KableNet.Common
                 }
                 else
                 {
-                    _tcpBuffer = new byte[ _tcpPendingPacket.payloadSize ];
+                    _tcpBuffer = new byte[ _tcpPendingPacket.PayloadSize ];
                 }
-                tcpSocket.BeginReceive( _tcpBuffer, 0, _tcpBuffer.Length, SocketFlags.None, OnTCPRecvCallback, null );
+                TcpSocket.BeginReceive( _tcpBuffer, 0, _tcpBuffer.Length, SocketFlags.None, OnTcpRecvCallback, null );
             }
             catch ( SocketException ex )
             {
                 ConnectErroredEvent?.Invoke( ex, this );
-                connected = false;
+                Connected = false;
             }
             catch ( Exception ex )
             {
                 ConnectionErroredEvent?.Invoke( ex, this );
-                connected = false;
+                Connected = false;
             }
         }
 
         /// <summary>
-        ///     Starts the Async Callback for reading UDP data from the socket
+        ///     Starts the Async Callback for reading Udp data from the socket
         /// </summary>
-        private void BeginRecieveUDP( )
+        private void BeginRecieveUdp( )
         {
-            if ( closed )
+            if ( Closed )
                 return;
             try
             {
@@ -141,86 +141,86 @@ namespace KableNet.Common
                 }
                 else
                 {
-                    _udpBuffer = new byte[ _udpPendingPacket.payloadSize ];
+                    _udpBuffer = new byte[ _udpPendingPacket.PayloadSize ];
                 }
-                udpSocket.BeginReceive( _udpBuffer, 0, _udpBuffer.Length, SocketFlags.None, OnUDPRecvCallback, null );
+                UdpSocket.BeginReceive( _udpBuffer, 0, _udpBuffer.Length, SocketFlags.None, OnUdpRecvCallback, null );
             }
             catch ( SocketException ex )
             {
                 ConnectErroredEvent?.Invoke( ex, this );
-                connected = false;
+                Connected = false;
             }
             catch ( Exception ex )
             {
                 ConnectionErroredEvent?.Invoke( ex, this );
-                connected = false;
+                Connected = false;
             }
         }
 
         /// <summary>
-        ///     Used ClientSide for completing the Async connection to the TCP server
+        ///     Used ClientSide for completing the Async connection to the Tcp server
         /// </summary>
-        /// <param name="AR"></param>
-        private void ConnectCallback( IAsyncResult AR )
+        /// <param name="asyncResult"></param>
+        private void ConnectCallback( IAsyncResult asyncResult )
         {
-            if ( closed )
+            if ( Closed )
                 return;
             try
             {
-                tcpSocket.EndConnect( AR );
-                connected = true;
+                TcpSocket.EndConnect( asyncResult );
+                Connected = true;
                 ConnectedEvent?.Invoke( this );
             }
             catch ( SocketException ex )
             {
                 ConnectErroredEvent?.Invoke( ex, this );
-                connected = false;
+                Connected = false;
             }
             catch ( Exception ex )
             {
                 ConnectionErroredEvent?.Invoke( ex, this );
-                connected = false;
+                Connected = false;
             }
 
-            if ( connected && !closed )
+            if ( Connected && !Closed )
             {
-                BeginRecieveTCP( );
-                BeginRecieveUDP( );
+                BeginRecieveTcp( );
+                BeginRecieveUdp( );
             }
         }
 
         public void SendPacketTc( KablePacket packet )
         {
-            if ( closed )
+            if ( Closed )
                 return;
             SendPacketTcpAsync( packet ).Wait( );
         }
         public void SendPacketTcp( List<byte> packetBuffer )
         {
-            if ( closed )
+            if ( Closed )
                 return;
-            SendPacketTCPAsync( packetBuffer ).Wait( );
+            SendPacketTcpAsync( packetBuffer ).Wait( );
         }
 
         public async Task SendPacketTcpAsync( KablePacket packet )
         {
-            if ( closed )
+            if ( Closed )
                 return;
-            await SendPacketTCPAsync( packet.GetRaw( ) );
+            await SendPacketTcpAsync( packet.GetRaw( ) );
         }
 
         /// <summary>
-        ///     Sends a TCP buffer through the KableConnection to the recieving end.
+        ///     Sends a Tcp buffer through the KableConnection to the recieving end.
         /// </summary>
         /// <param name="packetBuffer">Bytes to send</param>
         /// <returns></returns>
-        public async Task SendPacketTCPAsync( List<byte> packetBuffer )
+        public async Task SendPacketTcpAsync( List<byte> packetBuffer )
         {
-            if ( closed )
+            if ( Closed )
                 return;
             try
             {
-                if ( tcpSocket != null && connected )
+                if ( TcpSocket != null && Connected )
                 {
                     List<byte> sendBuffer = new List<byte>( );
 
@@ -238,99 +238,105 @@ namespace KableNet.Common
                         Array.Reverse( sendBufferArray );
                     }
 
-                    await Task.Run( ( ) => tcpSocket.Send( sendBufferArray ) );
+                    // I think I misunderstood how ASYNC works with Task.Run and,
+                    // after I implemented this, the method started hanging here 
+                    //await Task.Run( ( ) => tcpSocket.Send( sendBufferArray ) );
+                    // Trying, instead, to do the following:                    (Yes, I know it needs to be optimized. SORRY!)
+                    ArraySegment<Byte> arraySeg = new ArraySegment<byte>( sendBufferArray );
+                    await TcpSocket.SendAsync( arraySeg, SocketFlags.None );
                 }
             }
             catch ( SocketException ex )
             {
                 ConnectErroredEvent?.Invoke( ex, this );
-                connected = false;
+                Connected = false;
             }
             catch ( Exception ex )
             {
                 ConnectionErroredEvent?.Invoke( ex, this );
-                connected = false;
+                Connected = false;
             }
         }
 
 
-        public void SendPacketUDP( KablePacket packet )
+        public void SendPacketUdp( KablePacket packet )
         {
-            if ( closed )
+            if ( Closed )
                 return;
-            SendPacketUDPAsync( packet ).Wait( );
+            SendPacketUdpAsync( packet ).Wait( );
         }
-        public void SendPacketUDP( List<byte> packetBuffer )
+        public void SendPacketUdp( List<byte> packetBuffer )
         {
-            if ( closed )
+            if ( Closed )
                 return;
-            SendPacketUDPAsync( packetBuffer ).Wait( );
+            SendPacketUdpAsync( packetBuffer ).Wait( );
         }
 
-        public async Task SendPacketUDPAsync( KablePacket packet )
+        public async Task SendPacketUdpAsync( KablePacket packet )
         {
-            if ( closed )
+            if ( Closed )
                 return;
-            await SendPacketUDPAsync( packet.GetRaw( ) );
+            await SendPacketUdpAsync( packet.GetRaw( ) );
         }
 
         /// <summary>
-        ///     Sends a TCP buffer through the KableConnection to the recieving end.
+        ///     Sends a Tcp buffer through the KableConnection to the recieving end.
         /// </summary>
         /// <param name="packetBuffer">Bytes to send</param>
         /// <returns></returns>
-        public async Task SendPacketUDPAsync( List<byte> packetBuffer )
+        public async Task SendPacketUdpAsync( List<byte> packetBuffer )
         {
-            if ( closed )
+            if ( Closed )
                 return;
             try
             {
-                if ( udpSocket != null && connected )
+                if ( UdpSocket != null && Connected )
                 {
                     List<byte> sendBuffer = new List<byte>( );
 
                     // Get the amount of bytes as a UInt and convert it to bytes.
-                    // This goes as a suffix to our actual payload btyes to tell the
+                    // This goes as a suffix to our actual payload bytes to tell the
                     // recieving end how many bytes we're sending.
                     sendBuffer.AddRange( BitConverter.GetBytes( (uint)packetBuffer.Count ) );
                     sendBuffer.AddRange( packetBuffer );
 
                     byte[ ] sendBufferArray = sendBuffer.ToArray( );
 
-                    // Make sure we account for differences in LittleEdian!
+                    // Make sure we account for differences in LittleEndian!
                     if ( !BitConverter.IsLittleEndian )
                     {
                         Array.Reverse( sendBufferArray );
                     }
 
-                    await Task.Run( ( ) => udpSocket.Send( sendBufferArray ) );
+                    ArraySegment<Byte> arraySeg = new ArraySegment<byte>( sendBufferArray );
+                    await UdpSocket.SendAsync( arraySeg, SocketFlags.None );
                 }
             }
             catch ( SocketException ex )
             {
                 ConnectErroredEvent?.Invoke( ex, this );
-                connected = false;
+                Connected = false;
             }
             catch ( Exception ex )
             {
                 ConnectionErroredEvent?.Invoke( ex, this );
-                connected = false;
+                Connected = false;
             }
         }
 
         /// <summary>
-        ///     Callback for the Async TCP reading
+        ///     Callback for the Async Tcp reading
         /// </summary>
         /// <param name="ar"></param>
-        private void OnTCPRecvCallback( IAsyncResult ar )
+        private void OnTcpRecvCallback( IAsyncResult ar )
         {
-            if ( closed )
+            if ( Closed )
                 return;
             try
             {
-                if ( tcpSocket != null )
+                if ( TcpSocket != null )
                 {
-                    int bytesRead = tcpSocket.EndReceive( ar );
+                    int bytesRead = TcpSocket.EndReceive( ar );
 
                     // Make sure we account for differences in LittleEdian!
                     if ( !BitConverter.IsLittleEndian )
@@ -353,46 +359,46 @@ namespace KableNet.Common
                         // We didnt read any data. Assume the connection was terminated and
                         // throw a error for it.
                         ConnectionErroredEvent?.Invoke( new Exception( "[KableConnection_Error]Connection was lost: Read zero bytes!" ), this );
-                        connected = false;
+                        Connected = false;
                     }
                 }
             }
             catch ( SocketException ex )
             {
                 ConnectErroredEvent?.Invoke( ex, this );
-                connected = false;
+                Connected = false;
             }
             catch ( Exception ex )
             {
                 ConnectionErroredEvent?.Invoke( ex, this );
-                connected = false;
+                Connected = false;
             }
 
-            if ( connected && !closed )
+            if ( Connected && !Closed )
             {
-                if ( backgroundProcessing )
+                if ( BackgroundProcessing )
                 {
                     ProcessBuffer( );
                 }
 
-                BeginRecieveTCP( );
+                BeginRecieveTcp( );
             }
         }
 
         /// <summary>
-        ///     Callback for the Async UDP reading
+        ///     Callback for the Async Udp reading
         /// </summary>
         /// <param name="ar"></param>
         /// <exception cref="NotImplementedException"></exception>
-        private void OnUDPRecvCallback( IAsyncResult ar )
+        private void OnUdpRecvCallback( IAsyncResult ar )
         {
-            if ( closed )
+            if ( Closed )
                 return;
             try
             {
-                if ( udpSocket != null )
+                if ( UdpSocket != null )
                 {
-                    int bytesRead = udpSocket.EndReceive( ar );
+                    int bytesRead = UdpSocket.EndReceive( ar );
 
                     // Make sure we account for differences in LittleEdian!
                     if ( !BitConverter.IsLittleEndian )
@@ -415,40 +421,47 @@ namespace KableNet.Common
                         // We didnt read any data. Assume the connection was terminated and
                         // throw a error for it.
                         ConnectionErroredEvent?.Invoke( new Exception( "[KableConnection_Error]Connection was lost: Read zero bytes!" ), this );
-                        connected = false;
+                        Connected = false;
                     }
                 }
             }
             catch ( SocketException ex )
             {
                 ConnectErroredEvent?.Invoke( ex, this );
-                connected = false;
+                Connected = false;
             }
             catch ( Exception ex )
             {
                 ConnectionErroredEvent?.Invoke( ex, this );
-                connected = false;
+                Connected = false;
             }
 
-            if ( connected && !closed )
+            if ( Connected && !Closed )
             {
-                if ( backgroundProcessing )
+                if ( BackgroundProcessing )
                 {
                     ProcessBuffer( );
                 }
 
-                BeginRecieveUDP( );
+                BeginRecieveUdp( );
             }
         }
 
         private ProcessedResultType ProcessBufferTcp( )
         {
-            if ( _tcpPacketBuffer.Count <= 0 || closed )
+            int tcpPacketBuffCount = -1;
+
+            lock ( _tcpPacketBuffer )
+            {
+                tcpPacketBuffCount = _tcpPacketBuffer.Count;
+            }
+            
+            if ( tcpPacketBuffCount <= 0 || Closed )
                 return ProcessedResultType.EXIT;
 
             if ( _tcpPendingPacket is null )
             {
-                if ( _tcpPacketBuffer.Count >= SizeHelper.Normal )
+                if ( tcpPacketBuffCount >= SizeHelper.Normal )
                 {
                     int newPayloadSize = -1;
 
@@ -459,7 +472,7 @@ namespace KableNet.Common
 
                     _tcpPendingPacket = new PendingPacket
                     {
-                        payloadSize = newPayloadSize,
+                        PayloadSize = newPayloadSize,
                     };
                     // Change tmpBuffer to the suffix of data after our "Payload Size" marker
                     lock ( _tcpPacketBuffer )
@@ -477,20 +490,20 @@ namespace KableNet.Common
                 }
             }
 
-            if ( _tcpPacketBuffer.Count >= _tcpPendingPacket.payloadSize )
+            if ( tcpPacketBuffCount >= _tcpPendingPacket.PayloadSize )
             {
                 // Add current buffer's data to the pendingPacket to fill it up more
                 lock ( _tcpPacketBuffer )
                 {
-                    _tcpPendingPacket.currentPayload.AddRange( _tcpPacketBuffer.GetRange( 0, _tcpPendingPacket.payloadSize ) );
+                    _tcpPendingPacket.CurrentPayload.AddRange( _tcpPacketBuffer.GetRange( 0, _tcpPendingPacket.PayloadSize ) );
                 }
                 // Check if the pendingPacket is full...
-                if ( _tcpPendingPacket.currentPayload.Count >= _tcpPendingPacket.payloadSize )
+                if ( _tcpPendingPacket.CurrentPayload.Count >= _tcpPendingPacket.PayloadSize )
                 {
                     // its full! Raise the event and then if we have enough data, repeat this loop.
                     try
                     {
-                        PacketReadyEvent?.Invoke( new KablePacket( _tcpPendingPacket.currentPayload ), this );
+                        PacketReadyEvent?.Invoke( new KablePacket( _tcpPendingPacket.CurrentPayload ), this );
                     }
                     catch ( Exception ex )
                     {
@@ -515,12 +528,19 @@ namespace KableNet.Common
 
         private ProcessedResultType ProcessBufferUdp( )
         {
-            if ( _udpPacketBuffer.Count <= 0 || closed )
+            int udpPacketBuffCount = -1;
+
+            lock ( _udpPacketBuffer )
+            {
+                udpPacketBuffCount = _udpPacketBuffer.Count;
+            }
+            
+            if ( udpPacketBuffCount <= 0 || Closed )
                 return ProcessedResultType.EXIT;
 
             if ( _udpPendingPacket is null )
             {
-                if ( _udpPacketBuffer.Count >= SizeHelper.Normal )
+                if ( udpPacketBuffCount >= SizeHelper.Normal )
                 {
                     int newPayloadSize = -1;
 
@@ -531,7 +551,7 @@ namespace KableNet.Common
 
                     _udpPendingPacket = new PendingPacket
                     {
-                        payloadSize = newPayloadSize,
+                        PayloadSize = newPayloadSize,
                     };
                     // Change tmpBuffer to the suffix of data after our "Payload Size" marker
                     lock ( _udpPacketBuffer )
@@ -550,20 +570,20 @@ namespace KableNet.Common
                 }
             }
 
-            if ( _udpPacketBuffer.Count >= _udpPendingPacket.payloadSize )
+            if ( udpPacketBuffCount >= _udpPendingPacket.PayloadSize )
             {
                 // Add current buffer's data to the pendingPacket to fill it up more
                 lock ( _udpPacketBuffer )
                 {
-                    _udpPendingPacket.currentPayload.AddRange( _udpPacketBuffer.GetRange( 0, _udpPendingPacket.payloadSize ) );
+                    _udpPendingPacket.CurrentPayload.AddRange( _udpPacketBuffer.GetRange( 0, _udpPendingPacket.PayloadSize ) );
                 }
                 // Check if the pendingPacket is full...
-                if ( _udpPendingPacket.currentPayload.Count >= _udpPendingPacket.payloadSize )
+                if ( _udpPendingPacket.CurrentPayload.Count >= _udpPendingPacket.PayloadSize )
                 {
                     // its full! Raise the event and then if we have enough data, repeat this loop.
                     try
                     {
-                        PacketReadyEvent?.Invoke( new KablePacket( _udpPendingPacket.currentPayload ), this );
+                        PacketReadyEvent?.Invoke( new KablePacket( _udpPendingPacket.CurrentPayload ), this );
                     }
                     catch ( Exception ex )
                     {
@@ -575,8 +595,8 @@ namespace KableNet.Common
 
                     lock ( _udpPacketBuffer )
                     {
-                        _udpPacketBuffer = _udpPacketBuffer.GetRange( _udpPendingPacket.payloadSize,
-                            _udpPacketBuffer.Count - _udpPendingPacket.payloadSize );
+                        _udpPacketBuffer = _udpPacketBuffer.GetRange( _udpPendingPacket.PayloadSize,
+                            _udpPacketBuffer.Count - _udpPendingPacket.PayloadSize );
                     }
 
                     _tcpPendingPacket = null;
@@ -594,17 +614,16 @@ namespace KableNet.Common
         /// </summary>
         public void ProcessBuffer( )
         {
-            if ( closed )
+            if ( Closed )
                 return;
-            int againCount;
 
+            int againCount = 0;
             // Dont rerun these loops more than maxProcessIterations times.
-
-            againCount = 0;
-            // TCP
+            
+            // Tcp
             while ( againCount < maxProcessIterations )
             {
-                if ( closed )
+                if ( Closed )
                     return;
                 againCount++;
 
@@ -614,10 +633,10 @@ namespace KableNet.Common
             }
 
             againCount = 0;
-            // UDP
+            // Udp
             while ( againCount < maxProcessIterations )
             {
-                if ( closed )
+                if ( Closed )
                     return;
                 againCount++;
 
@@ -629,27 +648,32 @@ namespace KableNet.Common
 
         public void Close( )
         {
-            
-            closed = true;
+            Closed = true;
             try
             {
-                tcpSocket.Close( );
+                TcpSocket.Close( );
             }
-            catch { }
+            catch
+            {
+                // ignored
+            }
 
             try
             {
-                udpSocket.Close( );
+                UdpSocket.Close( );
             }
-            catch { }
+            catch
+            {
+                // ignored
+            }
         }
 
-        public bool connected { get; private set; }
-        public bool closed { get; private set; } = false;
-        public Socket tcpSocket { get; }
-        public Socket udpSocket { get; }
-        public IPAddress address { get; }
-        public int port { get; }
+        public bool Connected { get; private set; }
+        public bool Closed { get; private set; } = false;
+        public Socket TcpSocket { get; }
+        public Socket UdpSocket { get; }
+        public IPAddress Address { get; }
+        public int Port { get; }
 
         private byte[ ] _tcpBuffer;
         private List<byte> _tcpPacketBuffer = new List<byte>( );
@@ -676,8 +700,8 @@ namespace KableNet.Common
         /// </summary>
         private class PendingPacket
         {
-            public int payloadSize { get; set; }
-            public List<byte> currentPayload { get; } = new List<byte>( );
+            public int PayloadSize { get; set; }
+            public List<byte> CurrentPayload { get; } = new List<byte>( );
         }
     }
 }
