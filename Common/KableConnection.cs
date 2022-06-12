@@ -193,35 +193,11 @@ namespace KableNet.Common
         {
             if ( Closed )
                 return;
-            SendPacketTcpAsync( packet ).Wait( );
-        }
-        public void SendPacketTcp( List<byte> packetBuffer )
-        {
-            if ( Closed )
-                return;
-            SendPacketTcpAsync( packetBuffer ).Wait( );
-        }
-
-        public async Task SendPacketTcpAsync( KablePacket packet )
-        {
-            if ( Closed )
-                return;
-            await SendPacketTcpAsync( packet.GetRaw( ) );
-        }
-
-        /// <summary>
-        ///     Sends a Tcp buffer through the KableConnection to the recieving end.
-        /// </summary>
-        /// <param name="packetBuffer">Bytes to send</param>
-        /// <returns></returns>
-        public async Task SendPacketTcpAsync( List<byte> packetBuffer )
-        {
-            if ( Closed )
-                return;
             try
             {
                 if ( TcpSocket != null && Connected )
                 {
+                    List<byte> packetBuffer = packet.GetRaw( );
                     List<byte> sendBuffer = new List<byte>( );
 
                     // Get the amount of bytes as a UInt and convert it to bytes.
@@ -238,12 +214,7 @@ namespace KableNet.Common
                         Array.Reverse( sendBufferArray );
                     }
 
-                    // I think I misunderstood how ASYNC works with Task.Run and,
-                    // after I implemented this, the method started hanging here 
-                    //await Task.Run( ( ) => tcpSocket.Send( sendBufferArray ) );
-                    // Trying, instead, to do the following:                    (Yes, I know it needs to be optimized. SORRY!)
-                    ArraySegment<Byte> arraySeg = new ArraySegment<byte>( sendBufferArray );
-                    await TcpSocket.SendAsync( arraySeg, SocketFlags.None );
+                    TcpSocket.Send( sendBufferArray, 0,  sendBufferArray.Length, SocketFlags.None);
                 }
             }
             catch ( SocketException ex )
@@ -258,33 +229,7 @@ namespace KableNet.Common
             }
         }
 
-
         public void SendPacketUdp( KablePacket packet )
-        {
-            if ( Closed )
-                return;
-            SendPacketUdpAsync( packet ).Wait( );
-        }
-        public void SendPacketUdp( List<byte> packetBuffer )
-        {
-            if ( Closed )
-                return;
-            SendPacketUdpAsync( packetBuffer ).Wait( );
-        }
-
-        public async Task SendPacketUdpAsync( KablePacket packet )
-        {
-            if ( Closed )
-                return;
-            await SendPacketUdpAsync( packet.GetRaw( ) );
-        }
-
-        /// <summary>
-        ///     Sends a Tcp buffer through the KableConnection to the recieving end.
-        /// </summary>
-        /// <param name="packetBuffer">Bytes to send</param>
-        /// <returns></returns>
-        public async Task SendPacketUdpAsync( List<byte> packetBuffer )
         {
             if ( Closed )
                 return;
@@ -292,11 +237,12 @@ namespace KableNet.Common
             {
                 if ( UdpSocket != null && Connected )
                 {
+                    List<byte> packetBuffer = packet.GetRaw( );
                     List<byte> sendBuffer = new List<byte>( );
 
                     // Get the amount of bytes as a UInt and convert it to bytes.
                     // This goes as a suffix to our actual payload bytes to tell the
-                    // recieving end how many bytes we're sending.
+                    // receiving end how many bytes we're sending.
                     sendBuffer.AddRange( BitConverter.GetBytes( (uint)packetBuffer.Count ) );
                     sendBuffer.AddRange( packetBuffer );
 
@@ -308,8 +254,7 @@ namespace KableNet.Common
                         Array.Reverse( sendBufferArray );
                     }
 
-                    ArraySegment<Byte> arraySeg = new ArraySegment<byte>( sendBufferArray );
-                    await UdpSocket.SendAsync( arraySeg, SocketFlags.None );
+                    UdpSocket.Send( sendBufferArray, 0,  sendBufferArray.Length, SocketFlags.None);
                 }
             }
             catch ( SocketException ex )
