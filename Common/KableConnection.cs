@@ -460,8 +460,7 @@ namespace KableNet.Common
 
                     lock ( _tcpPacketBuffer )
                     {
-                        //_tcpPacketBuffer = _tcpPacketBuffer.GetRange( _tcpPendingPacket.payloadSize, _tcpPacketBuffer.Count - _tcpPendingPacket.payloadSize );
-                        _tcpPacketBuffer.Clear( );
+                        _tcpPacketBuffer = _tcpPacketBuffer.GetRange( _tcpPendingPacket.PayloadSize, _tcpPacketBuffer.Count - _tcpPendingPacket.PayloadSize );
                     }
 
                     _tcpPendingPacket = null;
