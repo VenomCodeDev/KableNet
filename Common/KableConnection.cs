@@ -4,6 +4,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
+using KableNet.Server;
+
 namespace KableNet.Common
 {
     /// <summary>
@@ -25,15 +27,13 @@ namespace KableNet.Common
         {
             IsServer = false;
             
-            this.Address = address;
-            this.Port = port;
+            Address = address;
+            Port = port;
 
-            /*
-            UdpEndPoint = new IPEndPoint( Address, Port + 1 );
+            UdpEndPoint = new IPEndPoint(IPAddress.Any, 0);
 
             UdpSocket = new Socket( AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp );
             UdpSocket.SetSocketOption( SocketOptionLevel.IP, SocketOptionName.ReuseAddress, true );
-            */
             
             TcpSocket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
             TcpSocket.NoDelay = true;
@@ -47,7 +47,7 @@ namespace KableNet.Common
         ///     ServerSide way to get a KableConnection instance.
         /// </summary>
         /// <param name="activeTcpSocket">The raw Tcp Socket.</param>
-        internal KableConnection( Socket activeTcpSocket )
+        internal KableConnection( Socket activeTcpSocket, KableServer server )
         {
             IsServer = true;
             
@@ -56,16 +56,14 @@ namespace KableNet.Common
             Connected = true;
 
             
-            /*
             Address = IPAddress.Parse(((IPEndPoint)(activeTcpSocket.RemoteEndPoint)).Address.ToString());
-            Port = ( (IPEndPoint)( activeTcpSocket.RemoteEndPoint ) ).Port;
+            Port = server.Port;
             
-            UdpEndPoint = new IPEndPoint( IPAddress.Any, Port + 1 );
+            UdpEndPoint = new IPEndPoint(IPAddress.Any, 0);
             
             UdpSocket = new Socket( AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp );
             UdpSocket.SetSocketOption( SocketOptionLevel.IP, SocketOptionName.ReuseAddress, true );
-            UdpSocket.Bind(UdpEndPoint);
-            */
+            UdpSocket.Bind(new IPEndPoint( IPAddress.Any, Port + 1 ));
             
             Connected = true;
             _tcpBuffer = new byte[ SizeHelper.Normal ];
@@ -73,11 +71,12 @@ namespace KableNet.Common
             _udpBuffer = new byte[ UdpBufferSize ];
             
             BeginRecieveTcp( );
+            ReceiveUdp(  );
         }
 
         private void ReceiveUdp( )
         {
-            //UdpSocket.BeginReceiveFrom( _udpBuffer, 0, _udpBuffer.Length, SocketFlags.None, ref UdpEndPoint, OnUdpRecvCallback, null );
+            UdpSocket.BeginReceiveFrom( _udpBuffer, 0, _udpBuffer.Length, SocketFlags.None, ref UdpEndPoint, OnUdpRecvCallback, null );
         }
 
         public bool BackgroundProcessing { get; private set; }
@@ -93,7 +92,7 @@ namespace KableNet.Common
             try
             {
                 TcpSocket.BeginConnect( new IPEndPoint( Address, Port ), ConnectCallback, null );
-                //UdpSocket.BeginConnect( UdpEndPoint, ConnectUdpCallback, null );
+                UdpSocket.BeginConnect( new IPEndPoint( Address, Port + 1 ), ConnectUdpCallback, null );
             }
             catch ( SocketException ex )
             {
@@ -155,6 +154,9 @@ namespace KableNet.Common
             try
             {
                 UdpSocket.EndConnect( ar );
+
+                ConnectionErroredEvent?.Invoke( new Exception( "ConnectUdp did callback!" ), this );
+                
                 ReceiveUdp( );
             }
             catch ( SocketException ex )
@@ -243,7 +245,6 @@ namespace KableNet.Common
 
         public void SendPacketUdp( KablePacket packet )
         {
-            /*
             if ( Closed )
                 return;
             try
@@ -280,7 +281,6 @@ namespace KableNet.Common
                 ConnectionErroredEvent?.Invoke( ex, this );
                 Connected = false;
             }
-            */
         }
 
         /// <summary>
@@ -513,8 +513,7 @@ namespace KableNet.Common
                     // Change tmpBuffer to the suffix of data after our "Payload Size" marker
                     lock ( _udpPacketBuffer )
                     {
-                        //_udpPacketBuffer = _udpPacketBuffer.GetRange( SizeHelper.Normal, _udpPacketBuffer.Count - SizeHelper.Normal );
-                        _udpPacketBuffer.Clear( );
+                        _udpPacketBuffer = _udpPacketBuffer.GetRange( SizeHelper.Normal, _udpPacketBuffer.Count - SizeHelper.Normal );
                     }
                 }
                 else
@@ -589,7 +588,6 @@ namespace KableNet.Common
                     break;
             }
 
-            /*
             againCount = 0;
             // Udp
             while ( againCount < maxProcessIterations )
@@ -602,7 +600,6 @@ namespace KableNet.Common
                 if ( result is ProcessedResultType.EXIT )
                     break;
             }
-            */
         }
 
         public void Close( )

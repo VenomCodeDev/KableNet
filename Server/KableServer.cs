@@ -24,8 +24,9 @@ namespace KableNet.Server
         /// <param name="port"></param>
         public KableServer( int port )
         {
+            Port = port;
             _socket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
-            _socket.Bind( new IPEndPoint( IPAddress.Any, port ) );
+            _socket.Bind( new IPEndPoint( IPAddress.Any, Port ) );
             _socket.NoDelay = true;
             _socket.Listen( 10 );
         }
@@ -42,7 +43,7 @@ namespace KableNet.Server
                 Socket sock = _socket.EndAccept( ar );
                 if ( sock != null )
                 {
-                    KableConnection conn = new KableConnection( sock );
+                    KableConnection conn = new KableConnection( sock, this );
 
                     NewConnectionEvent?.Invoke( conn );
                 }
@@ -72,6 +73,9 @@ namespace KableNet.Server
         {
             _socket.BeginAccept( OnTcpAcceptCallback, _socket );
         }
+
+        public int Port { get; private set; } = -1;
+        
         public event NewConnection NewConnectionEvent;
         public event NewConnectionSocketError NewConnectionErroredEvent;
     }
