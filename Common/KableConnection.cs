@@ -13,6 +13,7 @@ namespace KableNet.Common
     public class KableConnection
     {
         public int maxProcessIterations = 5;
+        public const int UdpBufferSize = 256;
 
         /// <summary>
         ///     ClientSide way to get a KableConnection instance.
@@ -22,17 +23,23 @@ namespace KableNet.Common
         /// <param name="port">Port to connect to</param>
         public KableConnection( IPAddress address, int port )
         {
+            IsServer = false;
+            
             this.Address = address;
             this.Port = port;
 
-            TcpSocket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
-            TcpSocket.NoDelay = true;
-            _tcpBuffer = new byte[ SizeHelper.Normal ];
+            /*
+            UdpEndPoint = new IPEndPoint( Address, Port + 1 );
 
             UdpSocket = new Socket( AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp );
             UdpSocket.SetSocketOption( SocketOptionLevel.IP, SocketOptionName.ReuseAddress, true );
-            UdpSocket.Bind( new IPEndPoint( IPAddress.Any, port + 1 ) );
-            _udpBuffer = new byte[ SizeHelper.Normal ];
+            */
+            
+            TcpSocket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
+            TcpSocket.NoDelay = true;
+            _tcpBuffer = new byte[ SizeHelper.Normal ];
+            
+            _udpBuffer = new byte[ UdpBufferSize ];
 
             Connected = false;
         }
@@ -42,27 +49,40 @@ namespace KableNet.Common
         /// <param name="activeTcpSocket">The raw Tcp Socket.</param>
         internal KableConnection( Socket activeTcpSocket )
         {
+            IsServer = true;
+            
             TcpSocket = activeTcpSocket;
 
             Connected = true;
 
-            Address = null;
-            Connected = true;
-            _tcpBuffer = new byte[ SizeHelper.Normal ];
-
+            
+            /*
+            Address = IPAddress.Parse(((IPEndPoint)(activeTcpSocket.RemoteEndPoint)).Address.ToString());
+            Port = ( (IPEndPoint)( activeTcpSocket.RemoteEndPoint ) ).Port;
+            
+            UdpEndPoint = new IPEndPoint( IPAddress.Any, Port + 1 );
+            
             UdpSocket = new Socket( AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp );
             UdpSocket.SetSocketOption( SocketOptionLevel.IP, SocketOptionName.ReuseAddress, true );
-            UdpSocket.Bind( new IPEndPoint( IPAddress.Any, Port + 1 ) );
-            _udpBuffer = new byte[ SizeHelper.Normal ];
-
+            UdpSocket.Bind(UdpEndPoint);
+            */
+            
+            Connected = true;
+            _tcpBuffer = new byte[ SizeHelper.Normal ];
+            
+            _udpBuffer = new byte[ UdpBufferSize ];
+            
             BeginRecieveTcp( );
-            BeginRecieveUdp( );
+        }
+
+        private void ReceiveUdp( )
+        {
+            //UdpSocket.BeginReceiveFrom( _udpBuffer, 0, _udpBuffer.Length, SocketFlags.None, ref UdpEndPoint, OnUdpRecvCallback, null );
         }
 
         public bool BackgroundProcessing { get; private set; }
 
         /// <summary>
-        ///     a
         ///     Only call this if you are ClientSided. ServerSided already
         ///     handles this via the client's connection.
         /// </summary>
@@ -73,6 +93,7 @@ namespace KableNet.Common
             try
             {
                 TcpSocket.BeginConnect( new IPEndPoint( Address, Port ), ConnectCallback, null );
+                //UdpSocket.BeginConnect( UdpEndPoint, ConnectUdpCallback, null );
             }
             catch ( SocketException ex )
             {
@@ -126,24 +147,15 @@ namespace KableNet.Common
             }
         }
 
-        /// <summary>
-        ///     Starts the Async Callback for reading Udp data from the socket
-        /// </summary>
-        private void BeginRecieveUdp( )
+        private void ConnectUdpCallback( IAsyncResult ar )
         {
             if ( Closed )
                 return;
+
             try
             {
-                if ( _udpPendingPacket is null )
-                {
-                    _udpBuffer = new byte[ SizeHelper.Normal ];
-                }
-                else
-                {
-                    _udpBuffer = new byte[ _udpPendingPacket.PayloadSize ];
-                }
-                UdpSocket.BeginReceive( _udpBuffer, 0, _udpBuffer.Length, SocketFlags.None, OnUdpRecvCallback, null );
+                UdpSocket.EndConnect( ar );
+                ReceiveUdp( );
             }
             catch ( SocketException ex )
             {
@@ -156,7 +168,6 @@ namespace KableNet.Common
                 Connected = false;
             }
         }
-
         /// <summary>
         ///     Used ClientSide for completing the Async connection to the Tcp server
         /// </summary>
@@ -175,17 +186,18 @@ namespace KableNet.Common
             {
                 ConnectErroredEvent?.Invoke( ex, this );
                 Connected = false;
+                throw;
             }
             catch ( Exception ex )
             {
                 ConnectionErroredEvent?.Invoke( ex, this );
                 Connected = false;
+                throw;
             }
 
             if ( Connected && !Closed )
             {
                 BeginRecieveTcp( );
-                BeginRecieveUdp( );
             }
         }
 
@@ -231,6 +243,7 @@ namespace KableNet.Common
 
         public void SendPacketUdp( KablePacket packet )
         {
+            /*
             if ( Closed )
                 return;
             try
@@ -253,7 +266,7 @@ namespace KableNet.Common
                     {
                         Array.Reverse( sendBufferArray );
                     }
-
+                    
                     UdpSocket.Send( sendBufferArray, 0,  sendBufferArray.Length, SocketFlags.None);
                 }
             }
@@ -267,6 +280,7 @@ namespace KableNet.Common
                 ConnectionErroredEvent?.Invoke( ex, this );
                 Connected = false;
             }
+            */
         }
 
         /// <summary>
@@ -358,7 +372,7 @@ namespace KableNet.Common
                         {
                             // Get only the read bytes; ignore the excess data
                             // I dont know if this is needed, but ill remove later if its not.
-                            _tcpPacketBuffer.AddRange( new List<byte>( _udpBuffer ).GetRange( 0, bytesRead ) );
+                            _udpPacketBuffer.AddRange( new List<byte>( _udpBuffer ).GetRange( 0, bytesRead ) );
                         }
                     }
                     else
@@ -387,8 +401,7 @@ namespace KableNet.Common
                 {
                     ProcessBuffer( );
                 }
-
-                BeginRecieveUdp( );
+                ReceiveUdp(  );
             }
         }
 
@@ -543,7 +556,7 @@ namespace KableNet.Common
                             _udpPacketBuffer.Count - _udpPendingPacket.PayloadSize );
                     }
 
-                    _tcpPendingPacket = null;
+                    _udpPendingPacket = null;
                 }
             }
 
@@ -576,6 +589,7 @@ namespace KableNet.Common
                     break;
             }
 
+            /*
             againCount = 0;
             // Udp
             while ( againCount < maxProcessIterations )
@@ -588,6 +602,7 @@ namespace KableNet.Common
                 if ( result is ProcessedResultType.EXIT )
                     break;
             }
+            */
         }
 
         public void Close( )
@@ -614,10 +629,13 @@ namespace KableNet.Common
 
         public bool Connected { get; private set; }
         public bool Closed { get; private set; } = false;
-        public Socket TcpSocket { get; }
-        public Socket UdpSocket { get; }
-        public IPAddress Address { get; }
-        public int Port { get; }
+        public Socket TcpSocket { get; private set; }
+        public Socket UdpSocket { get; private set; }
+        private EndPoint UdpEndPoint;
+        public IPAddress Address { get; private set; }
+        public int Port { get; private set; }
+
+        public bool IsServer { get; private set; }
 
         private byte[ ] _tcpBuffer;
         private List<byte> _tcpPacketBuffer = new List<byte>( );

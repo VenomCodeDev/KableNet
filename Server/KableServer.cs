@@ -32,10 +32,10 @@ namespace KableNet.Server
 
         public void StartListening( )
         {
-            StartTCPAccept( );
+            StartTcpAccept( );
         }
 
-        private void OnTCPAcceptCallback( IAsyncResult ar )
+        private void OnTcpAcceptCallback( IAsyncResult ar )
         {
             try
             {
@@ -46,25 +46,31 @@ namespace KableNet.Server
 
                     NewConnectionEvent?.Invoke( conn );
                 }
+                else
+                {
+                    throw new Exception( "KableServer.OnTcpAcceptCallback sock was null!" );
+                }
                 // If its null, just continue the loop I guess?
                 // Im not sure what would cause that situation, so ill deal
                 // with it when/if it happens.
 
-                StartTCPAccept( );
+                StartTcpAccept( );
             }
             catch ( SocketException ex )
             {
                 NewConnectionErroredEvent?.Invoke( $"[SocketException]New Connection Error'd!\n{ex}" );
+                throw;
             }
             catch ( Exception ex )
             {
                 NewConnectionErroredEvent?.Invoke( $"[Exception]New Connection Error'd!\n{ex}" );
+                throw;
             }
         }
 
-        private void StartTCPAccept( )
+        private void StartTcpAccept( )
         {
-            _socket.BeginAccept( OnTCPAcceptCallback, _socket );
+            _socket.BeginAccept( OnTcpAcceptCallback, _socket );
         }
         public event NewConnection NewConnectionEvent;
         public event NewConnectionSocketError NewConnectionErroredEvent;
