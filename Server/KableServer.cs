@@ -12,11 +12,7 @@ namespace KableNet.Server
     public class KableServer
     {
 
-        public delegate void NewConnection( KableConnection connection );
 
-        public delegate void NewConnectionSocketError( string errorMessage );
-
-        readonly private Socket _socket;
         /// <summary>
         ///     Initializes a KableNet Server on the specified port bound to "0.0.0.0"
         ///     and starts listening.
@@ -25,10 +21,10 @@ namespace KableNet.Server
         public KableServer( int port )
         {
             Port = port;
-            _socket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
-            _socket.Bind( new IPEndPoint( IPAddress.Any, Port ) );
-            _socket.NoDelay = true;
-            _socket.Listen( 10 );
+            _tcpServerSocket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
+            _tcpServerSocket.Bind( new IPEndPoint( IPAddress.Any, Port ) );
+            _tcpServerSocket.NoDelay = true;
+            _tcpServerSocket.Listen( 10 );
         }
 
         public void StartListening( )
@@ -40,7 +36,7 @@ namespace KableNet.Server
         {
             try
             {
-                Socket sock = _socket.EndAccept( ar );
+                Socket sock = _tcpServerSocket.EndAccept( ar );
                 if ( sock != null )
                 {
                     KableConnection conn = new KableConnection( sock, this );
@@ -51,9 +47,6 @@ namespace KableNet.Server
                 {
                     throw new Exception( "KableServer.OnTcpAcceptCallback sock was null!" );
                 }
-                // If its null, just continue the loop I guess?
-                // Im not sure what would cause that situation, so ill deal
-                // with it when/if it happens.
 
                 StartTcpAccept( );
             }
@@ -68,15 +61,19 @@ namespace KableNet.Server
                 throw;
             }
         }
-
+        
         private void StartTcpAccept( )
         {
-            _socket.BeginAccept( OnTcpAcceptCallback, _socket );
+            _tcpServerSocket.BeginAccept( OnTcpAcceptCallback, _tcpServerSocket );
         }
 
         public int Port { get; private set; } = -1;
+        readonly private Socket _tcpServerSocket;
         
+        public delegate void NewConnection( KableConnection connection );
         public event NewConnection NewConnectionEvent;
+
+        public delegate void NewConnectionSocketError( string errorMessage );
         public event NewConnectionSocketError NewConnectionErroredEvent;
     }
 }
