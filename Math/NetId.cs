@@ -10,8 +10,8 @@ namespace KableNet.Math
     public class NetId
     {
 
-        private const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890$@#";
-        private const int validLength = 26;
+        private const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        private const int validLength = 10;
 
         readonly private string rawNetId = "__NULL__";
         private NetId( string networkIdentifier )

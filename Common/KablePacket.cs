@@ -113,6 +113,35 @@ namespace KableNet.Common
             Write( data.y );
             Write( data.z );
         }
+        public void Write(Vec3i data)
+        {
+            if(data is null)
+            {
+                throw new Exception( "[KablePacket]Write(Vec3i) was given NULL" );
+            }
+
+            Write( data.x );
+            Write( data.y );
+            Write( data.z );
+        }
+        public void Write(Vec2f data)
+        {
+            if(data is null)
+            {
+                throw new Exception( "[KablePacket]Write(vec2f) was given NULL" );
+            }
+            Write( data.x );
+            Write( data.y );
+        }
+        public void Write(Vec2i data)
+        {
+            if(data is null)
+            {
+                throw new Exception( "[KablePacket]Write(Vec2i) was given NULL" );
+            }
+            Write( data.x );
+            Write( data.y );
+        }
 
         public List<byte> ReadBytes( int length )
         {
@@ -135,6 +164,27 @@ namespace KableNet.Common
 
             return new Vec3f( x, y, z );
         }
+        public Vec3i ReadVec3i()
+        {
+            int x = ReadInt( );
+            int y = ReadInt( );
+            int z = ReadInt( );
+            return new Vec3i( x, y, z );
+        }
+        public Vec2f ReadVec2f()
+        {
+            float x = ReadFloat( );
+            float y = ReadFloat( );
+
+            return new Vec2f( x, y );
+        }
+        public Vec2i ReadVec2i()
+        {
+            int x = ReadInt( );
+            int y = ReadInt( );
+            return new Vec2i( x, y );
+        }
+
         public bool ReadBool( )
         {
             bool ret = BitConverter.ToBoolean( rawBytes.ToArray( ), readPosition );
