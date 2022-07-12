@@ -13,7 +13,7 @@ namespace KableNet.Common
     /// </summary>
     public class KablePacket
     {
-        readonly private List<byte> rawBytes;
+        readonly protected List<byte> rawBytes;
 
         private int readPosition;
         public KablePacket( )
@@ -36,6 +36,14 @@ namespace KableNet.Common
         public void ResetReadPosition( )
         {
             readPosition = 0;
+        }
+        public void SetReadPosition( int pos )
+        {
+            readPosition = pos;
+        }
+        public void GetReadPosition()
+        {
+            return readPosition;
         }
 
         public List<byte> GetRaw( )
@@ -145,7 +153,8 @@ namespace KableNet.Common
 
         public List<byte> ReadBytes( int length )
         {
-            return rawBytes.GetRange( readPosition, length );
+            readPosition += length;
+            return rawBytes.GetRange( readPosition - length, length );
         }
         public string ReadString( )
         {
